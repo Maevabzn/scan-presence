@@ -2,40 +2,117 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Scanner QR - Liste de présence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>USF Danse sur glace – Scanner</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 1rem;
+      background-color: #f9f9f9;
+      color: #1e3a8a;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    header img {
+      max-width: 140px;
+      margin-bottom: 0.5rem;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: #1e3a8a;
+    }
+    .date {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      color: #555;
     }
     #reader {
-      width: 300px;
-      margin-bottom: 20px;
+      max-width: 100%;
+      margin: 0 auto 1rem auto;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      overflow: hidden;
     }
-    table, th, td {
-      border: 1px solid #ccc;
+    table {
+      width: 100%;
       border-collapse: collapse;
-      padding: 8px;
+      background-color: #fff;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
     }
     th {
-      background-color: #f2f2f2;
+      background-color: #eff6ff;
+      font-weight: 600;
     }
-    button.delete-btn {
-      background-color: red;
-      color: white;
+    button {
+      padding: 0.5rem 1rem;
+      margin-right: 0.5rem;
       border: none;
-      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 1rem;
       cursor: pointer;
+      transition: 0.2s ease;
+    }
+    .btn-export {
+      background-color: #2563eb;
+      color: white;
+    }
+    .btn-clear {
+      background-color: #ef4444;
+      color: white;
+    }
+    .delete-btn {
+      background-color: #e11d48;
+      color: white;
+      border-radius: 6px;
+    }
+    .btn-export:hover {
+      background-color: #1e40af;
+    }
+    .btn-clear:hover {
+      background-color: #b91c1c;
+    }
+    .delete-btn:hover {
+      background-color: #9f1239;
+    }
+    @media (max-width: 600px) {
+      header h1 {
+        font-size: 1.3rem;
+      }
+      th, td {
+        font-size: 0.9rem;
+      }
+      button {
+        font-size: 0.9rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>🧾 Scanner QR - Liste de présence</h1>
-  <p>Date : <strong id="today-date"></strong></p>
+  <header>
+    <img src="logo-usf.png" alt="Logo USF Danse sur glace">
+    <h1>USF Danse sur Glace – Scanner de présence</h1>
+  </header>
+
+  <div class="date">Date : <span id="today-date"></span></div>
   <div id="reader"></div>
 
-  <h3>Présences enregistrées :</h3>
+  <h3>📋 Liste du jour :</h3>
   <table id="presence-table">
     <thead>
       <tr>
@@ -48,13 +125,14 @@
     <tbody></tbody>
   </table>
 
-  <br>
-  <button onclick="exportCSV()">📤 Exporter vers Excel (CSV)</button>
-  <button onclick="clearData()">🧹 Réinitialiser la liste</button>
+  <div style="margin-bottom: 2rem;">
+    <button class="btn-export" onclick="exportCSV()">📤 Exporter CSV</button>
+    <button class="btn-clear" onclick="clearData()">🧹 Réinitialiser</button>
+  </div>
 
   <script>
     const tableBody = document.querySelector("#presence-table tbody");
-    const today = new Date().toISOString().slice(0, 10); // ex: "2025-07-29"
+    const today = new Date().toISOString().slice(0, 10);
     const storageKey = "presence_" + today;
     const scannedIDs = new Set();
 
@@ -87,7 +165,7 @@
 
       const deleteCell = row.insertCell(3);
       const deleteBtn = document.createElement("button");
-      deleteBtn.innerText = "🗑️ Supprimer";
+      deleteBtn.innerText = "🗑️";
       deleteBtn.className = "delete-btn";
       deleteBtn.onclick = () => {
         tableBody.deleteRow(row.rowIndex - 1);
@@ -115,7 +193,7 @@
     }
 
     function clearData() {
-      if (confirm("Confirmer la suppression de toutes les présences du jour ?")) {
+      if (confirm("Supprimer toutes les présences du jour ?")) {
         localStorage.removeItem(storageKey);
         tableBody.innerHTML = "";
         scannedIDs.clear();
@@ -130,7 +208,6 @@
       }
     }
 
-    // Lancer la caméra et charger les données
     const html5QrCode = new Html5Qrcode("reader");
     Html5Qrcode.getCameras().then(devices => {
       if (devices && devices.length) {
@@ -142,7 +219,7 @@
       }
     });
 
-    loadData(); // Recharger les données du jour au démarrage
+    loadData();
   </script>
 </body>
 </html>
