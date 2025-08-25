@@ -109,18 +109,15 @@
     <h1>USF Danse sur Glace – Scanner de présence</h1>
   </header>
 
+  <div class="date">Date : <span id="today-date"></span></div>
+  <div id="reader"></div>
+
   <h3>📋 Liste du jour :</h3>
   <table id="presence-table">
     <thead>
       <tr>
-        <th>Ref</th>
+        <th>ID</th>
         <th>Nom</th>
-        <th>Prénom</th>
-        <th>Sexe</th>
-        <th>Date Naissance</th>
-        <th>Licence</th>
-        <th>Catage</th>
-        <th>CP</th>
         <th>Date/Heure</th>
         <th>Action</th>
       </tr>
@@ -128,8 +125,10 @@
     <tbody></tbody>
   </table>
 
-  <button onclick="exportCSV()">📤 Exporter CSV</button>
-  <button onclick="clearData()">🧹 Réinitialiser</button>
+  <div style="margin-bottom: 2rem;">
+    <button class="btn-export" onclick="exportCSV()">📤 Exporter CSV</button>
+    <button class="btn-clear" onclick="clearData()">🧹 Réinitialiser</button>
+  </div>
 
   <script>
     const tableBody = document.querySelector("#presence-table tbody");
@@ -137,12 +136,15 @@
     const storageKey = "presence_" + today;
     const scannedIDs = new Set();
 
+    document.getElementById("today-date").innerText = today;
+
     function saveData() {
       const data = [];
       document.querySelectorAll("#presence-table tbody tr").forEach(row => {
-        const rowData = Array.from(row.cells).slice(0, 8).map(td => td.innerText);
-        const timestamp = row.cells[8].innerText;
-        data.push([...rowData, timestamp]);
+        const id = row.cells[0].innerText;
+        const name = row.cells[1].innerText;
+        const timestamp = row.cells[2].innerText;
+        data.push({ id, name, timestamp });
       });
       localStorage.setItem(storageKey, JSON.stringify(data));
     }
@@ -150,30 +152,24 @@
     function loadData() {
       const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
       data.forEach(entry => {
-        addToTable(...entry);
-        scannedIDs.add(entry[0]); // Ref
+        addToTable(entry.id, entry.name, entry.timestamp);
+        scannedIDs.add(entry.id);
       });
     }
 
-    function addToTable(ref, nom, prenom, sexe, naissance, licence, catage, cp, timestamp = null) {
+    function addToTable(id, name, timestamp = null) {
       const row = tableBody.insertRow();
-      row.insertCell(0).innerText = ref;
-      row.insertCell(1).innerText = nom;
-      row.insertCell(2).innerText = prenom;
-      row.insertCell(3).innerText = sexe;
-      row.insertCell(4).innerText = naissance;
-      row.insertCell(5).innerText = licence;
-      row.insertCell(6).innerText = catage;
-      row.insertCell(7).innerText = cp;
-      row.insertCell(8).innerText = timestamp || new Date().toLocaleString();
+      row.insertCell(0).innerText = id;
+      row.insertCell(1).innerText = name || "—";
+      row.insertCell(2).innerText = timestamp || new Date().toLocaleString();
 
-      const deleteCell = row.insertCell(9);
+      const deleteCell = row.insertCell(3);
       const deleteBtn = document.createElement("button");
       deleteBtn.innerText = "🗑️";
       deleteBtn.className = "delete-btn";
       deleteBtn.onclick = () => {
         tableBody.deleteRow(row.rowIndex - 1);
-        scannedIDs.delete(ref);
+        scannedIDs.delete(id);
         saveData();
       };
       deleteCell.appendChild(deleteBtn);
@@ -182,9 +178,9 @@
     }
 
     function exportCSV() {
-      const rows = [["Ref","Nom","Prénom","Sexe","Date Naissance","Licence","Catage","CP","Date/Heure"]];
+      const rows = [["ID", "Nom", "Date/Heure"]];
       document.querySelectorAll("#presence-table tbody tr").forEach(row => {
-        const cols = Array.from(row.children).slice(0, 9).map(td => td.innerText);
+        const cols = Array.from(row.children).slice(0, 3).map(td => td.innerText);
         rows.push(cols);
       });
       const csvContent = rows.map(e => e.join(",")).join("\n");
@@ -205,13 +201,10 @@
     }
 
     function onScanSuccess(decodedText) {
-      const parts = decodedText.split(";");
-      if (parts.length >= 8) {
-        const [ref, nom, prenom, sexe, naissance, licence, catage, cp] = parts;
-        if (!scannedIDs.has(ref)) {
-          scannedIDs.add(ref);
-          addToTable(ref, nom, prenom, sexe, naissance, licence, catage, cp);
-        }
+      const [id, name] = decodedText.split(";");
+      if (!scannedIDs.has(id)) {
+        scannedIDs.add(id);
+        addToTable(id, name);
       }
     }
 
