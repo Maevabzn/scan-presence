@@ -2,186 +2,139 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Scanner QR - Liste de présence</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>USF Danse sur glace – Scanner</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      font-family: 'Inter', sans-serif;
-      margin: 0;
-      padding: 1rem;
-      background-color: #f9f9f9;
-      color: #1e3a8a;
-    }
-    header {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-    header img {
-      max-width: 140px;
-      margin-bottom: 0.5rem;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.6rem;
-      color: #1e3a8a;
-    }
-    .date {
-      text-align: center;
-      margin-bottom: 1rem;
-      font-weight: 600;
-      color: #555;
-    }
-    #reader {
-      width: 300px;
-      margin-bottom: 20px;
-      max-width: 100%;
-      margin: 0 auto 1rem auto;
-      border: 2px solid #ddd;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    table, th, td {
-      border: 1px solid #ccc;
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      padding: 8px;
-      background-color: #fff;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-    th, td {
-      padding: 0.75rem;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
-    th {
-      background-color: #f2f2f2;
-      background-color: #eff6ff;
-      font-weight: 600;
-    }
-    button.delete-btn {
-      background-color: red;
-      color: white;
-    button {
-      padding: 0.5rem 1rem;
-      margin-right: 0.5rem;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: 0.2s ease;
-    }
-    .btn-export {
-      background-color: #2563eb;
-      color: white;
-    }
-    .btn-clear {
-      background-color: #ef4444;
-      color: white;
-    }
-    .delete-btn {
-      background-color: #e11d48;
-      color: white;
-      border-radius: 6px;
-    }
-    .btn-export:hover {
-      background-color: #1e40af;
-    }
-    .btn-clear:hover {
-      background-color: #b91c1c;
-    }
-    .delete-btn:hover {
-      background-color: #9f1239;
-    }
-    @media (max-width: 600px) {
-      header h1 {
-        font-size: 1.3rem;
-      }
-      th, td {
-        font-size: 0.9rem;
-      }
-      button {
-        font-size: 0.9rem;
-      }
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    button { margin: 5px; padding: 8px 12px; cursor: pointer; }
+    .delete-btn { background: #e11d48; color: white; border: none; border-radius: 6px; }
   </style>
 </head>
 <body>
-  <h1>🧾 Scanner QR - Liste de présence</h1>
-  <p>Date : <strong id="today-date"></strong></p>
-  <header>
-    <img src="logo-usf.png" alt="Logo USF Danse sur glace">
-    <h1>USF Danse sur Glace – Scanner de présence</h1>
-  </header>
+  <h1>USF Danse sur Glace – Scanner de présence</h1>
+  <div id="reader" style="width:300px; margin-bottom:20px;"></div>
 
-  <div class="date">Date : <span id="today-date"></span></div>
-  <div id="reader"></div>
-
-  <h3>Présences enregistrées :</h3>
   <h3>📋 Liste du jour :</h3>
   <table id="presence-table">
     <thead>
       <tr>
-@@ -48,13 +125,14 @@
+        <th>Ref</th>
+        <th>Nom</th>
+        <th>Prénom</th>
+        <th>Sexe</th>
+        <th>Date Naissance</th>
+        <th>Licence</th>
+        <th>Catage</th>
+        <th>CP</th>
+        <th>Date/Heure</th>
+        <th>Action</th>
+      </tr>
+    </thead>
     <tbody></tbody>
   </table>
 
-  <br>
-  <button onclick="exportCSV()">📤 Exporter vers Excel (CSV)</button>
-  <button onclick="clearData()">🧹 Réinitialiser la liste</button>
-  <div style="margin-bottom: 2rem;">
-    <button class="btn-export" onclick="exportCSV()">📤 Exporter CSV</button>
-    <button class="btn-clear" onclick="clearData()">🧹 Réinitialiser</button>
-  </div>
+  <button onclick="exportCSV()">📤 Exporter CSV</button>
+  <button onclick="clearData()">🧹 Réinitialiser</button>
 
   <script>
     const tableBody = document.querySelector("#presence-table tbody");
-    const today = new Date().toISOString().slice(0, 10); // ex: "2025-07-29"
     const today = new Date().toISOString().slice(0, 10);
     const storageKey = "presence_" + today;
     const scannedIDs = new Set();
 
-@@ -87,7 +165,7 @@
+    function saveData() {
+      const data = [];
+      document.querySelectorAll("#presence-table tbody tr").forEach(row => {
+        const rowData = Array.from(row.cells).slice(0, 8).map(td => td.innerText);
+        const timestamp = row.cells[8].innerText;
+        data.push([...rowData, timestamp]);
+      });
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    }
 
-      const deleteCell = row.insertCell(3);
+    function loadData() {
+      const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
+      data.forEach(entry => {
+        addToTable(...entry);
+        scannedIDs.add(entry[0]); // Ref
+      });
+    }
+
+    function addToTable(ref, nom, prenom, sexe, naissance, licence, catage, cp, timestamp = null) {
+      const row = tableBody.insertRow();
+      row.insertCell(0).innerText = ref;
+      row.insertCell(1).innerText = nom;
+      row.insertCell(2).innerText = prenom;
+      row.insertCell(3).innerText = sexe;
+      row.insertCell(4).innerText = naissance;
+      row.insertCell(5).innerText = licence;
+      row.insertCell(6).innerText = catage;
+      row.insertCell(7).innerText = cp;
+      row.insertCell(8).innerText = timestamp || new Date().toLocaleString();
+
+      const deleteCell = row.insertCell(9);
       const deleteBtn = document.createElement("button");
-      deleteBtn.innerText = "🗑️ Supprimer";
       deleteBtn.innerText = "🗑️";
       deleteBtn.className = "delete-btn";
       deleteBtn.onclick = () => {
         tableBody.deleteRow(row.rowIndex - 1);
-@@ -115,7 +193,7 @@
+        scannedIDs.delete(ref);
+        saveData();
+      };
+      deleteCell.appendChild(deleteBtn);
+
+      saveData();
+    }
+
+    function exportCSV() {
+      const rows = [["Ref","Nom","Prénom","Sexe","Date Naissance","Licence","Catage","CP","Date/Heure"]];
+      document.querySelectorAll("#presence-table tbody tr").forEach(row => {
+        const cols = Array.from(row.children).slice(0, 9).map(td => td.innerText);
+        rows.push(cols);
+      });
+      const csvContent = rows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `presences_${today}.csv`;
+      a.click();
     }
 
     function clearData() {
-      if (confirm("Confirmer la suppression de toutes les présences du jour ?")) {
       if (confirm("Supprimer toutes les présences du jour ?")) {
         localStorage.removeItem(storageKey);
         tableBody.innerHTML = "";
         scannedIDs.clear();
-@@ -130,7 +208,6 @@
       }
     }
 
-    // Lancer la caméra et charger les données
+    function onScanSuccess(decodedText) {
+      const parts = decodedText.split(";");
+      if (parts.length >= 8) {
+        const [ref, nom, prenom, sexe, naissance, licence, catage, cp] = parts;
+        if (!scannedIDs.has(ref)) {
+          scannedIDs.add(ref);
+          addToTable(ref, nom, prenom, sexe, naissance, licence, catage, cp);
+        }
+      }
+    }
+
     const html5QrCode = new Html5Qrcode("reader");
     Html5Qrcode.getCameras().then(devices => {
       if (devices && devices.length) {
-@@ -142,7 +219,7 @@
+        html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: 250 },
+          onScanSuccess
+        );
       }
     });
 
-    loadData(); // Recharger les données du jour au démarrage
     loadData();
   </script>
 </body>
