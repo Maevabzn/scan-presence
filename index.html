@@ -71,7 +71,7 @@
 </head>
 <body>
   <header>
-    <img src="logo-usf.png" alt="Logo USF">
+    <img src="Bleu-jaune.png" alt="Logo USF">
     <h1>USF Danse sur Glace - Présences</h1>
   </header>
 
@@ -102,7 +102,20 @@
   <script>
     const tableBody = document.querySelector("#presenceTable tbody");
 
+    let lastScanned = "";
+    let lastTime = 0;
+
     function onScanSuccess(decodedText) {
+      const nowTime = Date.now();
+
+      // Empêche les doublons trop rapprochés (5 secondes)
+      if (decodedText === lastScanned && (nowTime - lastTime < 5000)) {
+        return;
+      }
+
+      lastScanned = decodedText;
+      lastTime = nowTime;
+
       const parts = decodedText.split(";");
       if (parts.length < 8) {
         alert("QR Code invalide !");
