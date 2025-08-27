@@ -97,18 +97,38 @@
 
   <div class="actions">
     <button onclick="exportCSV()">Exporter CSV</button>
+    <button onclick="resetList()">Vider la liste</button>
   </div>
 
   <script>
     const tableBody = document.querySelector("#presenceTable tbody");
-
     let lastScanned = "";
     let lastTime = 0;
+
+    // Sauvegarde du tableau dans localStorage
+    function saveData() {
+      localStorage.setItem("presenceData", tableBody.innerHTML);
+    }
+
+    // Restauration du tableau au chargement
+    function loadData() {
+      const saved = localStorage.getItem("presenceData");
+      if (saved) {
+        tableBody.innerHTML = saved;
+        // Réactiver les boutons supprimer
+        tableBody.querySelectorAll("button").forEach(btn => {
+          btn.onclick = () => {
+            btn.closest("tr").remove();
+            saveData();
+          };
+        });
+      }
+    }
 
     function onScanSuccess(decodedText) {
       const nowTime = Date.now();
 
-      // Empêche les doublons trop rapprochés (5 secondes)
+      // Évite les doublons rapprochés
       if (decodedText === lastScanned && (nowTime - lastTime < 5000)) {
         return;
       }
@@ -135,11 +155,15 @@
       const deleteCell = document.createElement("td");
       const delBtn = document.createElement("button");
       delBtn.textContent = "❌";
-      delBtn.onclick = () => row.remove();
+      delBtn.onclick = () => {
+        row.remove();
+        saveData();
+      };
       deleteCell.appendChild(delBtn);
       row.appendChild(deleteCell);
 
       tableBody.appendChild(row);
+      saveData();
     }
 
     function exportCSV() {
@@ -157,6 +181,16 @@
       link.download = `presences_${today}.csv`;
       link.click();
     }
+
+    function resetList() {
+      if (confirm("Voulez-vous vraiment vider la liste ?")) {
+        tableBody.innerHTML = "";
+        localStorage.removeItem("presenceData");
+      }
+    }
+
+    // Charger les données sauvegardées au démarrage
+    loadData();
 
     new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 })
       .render(onScanSuccess);
